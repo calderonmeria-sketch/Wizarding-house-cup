@@ -1,0 +1,1592 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🏰 The Wizarding House Cup</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700;900&family=Cinzel:wght@400;600;700&family=Quicksand:wght@500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+/* ==========================================================================
+   THE WIZARDING HOUSE CUP — STYLES
+   Palette:
+   --ink-navy:#0e1329  --parchment:#f3e6c8  --parchment-dark:#e3d3a8
+   --gold:#d3a625  --candle:#ffcf6b
+   Houses: Gryffindor #740001/#d3a625 | Slytherin #1a472a/#aaaaaa
+           Ravenclaw #0e1a40/#946b2d | Hufflepuff #ecb939/#372e29
+   ========================================================================== */
+
+:root{
+  --ink-navy:#0b0f24;
+  --ink-navy-2:#131a3a;
+  --parchment:#f3e6c8;
+  --parchment-dark:#e2cd9c;
+  --gold:#d3a625;
+  --gold-bright:#f1c94a;
+  --candle:#ffcf6b;
+  --text-dark:#2b1d0e;
+  --gryffindor:#740001;
+  --gryffindor-2:#ae0001;
+  --gryffindor-acc:#d3a625;
+  --slytherin:#0d2818;
+  --slytherin-2:#1a472a;
+  --slytherin-acc:#aaaaaa;
+  --ravenclaw:#0e1a40;
+  --ravenclaw-2:#222f5b;
+  --ravenclaw-acc:#946b2d;
+  --hufflepuff:#ecb939;
+  --hufflepuff-2:#f0c75e;
+  --hufflepuff-acc:#372e29;
+  --font-display:'Cinzel Decorative', serif;
+  --font-head:'Cinzel', serif;
+  --font-body:'Quicksand', sans-serif;
+  --radius:14px;
+  --shadow-deep:0 10px 30px rgba(0,0,0,.45);
+}
+
+*{box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+body{
+  margin:0;
+  min-height:100vh;
+  font-family:var(--font-body);
+  color:var(--parchment);
+  background:radial-gradient(ellipse at top, #1b234a 0%, var(--ink-navy) 60%, #050710 100%);
+  overflow-x:hidden;
+}
+
+/* Respect reduced motion */
+@media (prefers-reduced-motion: reduce){
+  *{animation-duration:.001ms !important; animation-iteration-count:1 !important; transition-duration:.001ms !important;}
+}
+body.no-anim *{animation:none !important; transition:none !important;}
+
+a,button{font-family:inherit;}
+
+/* ---------------- BACKGROUND MAGIC LAYERS ---------------- */
+.bg-layer{position:fixed; inset:0; z-index:-2; overflow:hidden; pointer-events:none;}
+.stars{
+  position:absolute; inset:0;
+  background-image:
+    radial-gradient(2px 2px at 20% 30%, #fff, transparent),
+    radial-gradient(1.5px 1.5px at 70% 60%, #fff, transparent),
+    radial-gradient(2px 2px at 40% 80%, #fff, transparent),
+    radial-gradient(1.5px 1.5px at 85% 20%, #fff, transparent),
+    radial-gradient(2px 2px at 60% 10%, #fff, transparent),
+    radial-gradient(1.5px 1.5px at 10% 65%, #fff, transparent),
+    radial-gradient(1.5px 1.5px at 92% 75%, #fff, transparent);
+  background-size:100% 100%;
+  animation:twinkle 4s ease-in-out infinite alternate;
+  opacity:.6;
+}
+@keyframes twinkle{from{opacity:.35;} to{opacity:.8;}}
+.castle-silhouette{
+  position:absolute; bottom:0; left:0; right:0; height:38vh; min-height:220px;
+  background:
+    linear-gradient(#0000 0%, #05060e 92%),
+    radial-gradient(circle at 20% 20%, var(--candle) 0 3px, transparent 4px) 8% 30%/60px 60px no-repeat,
+    radial-gradient(circle at 20% 20%, var(--candle) 0 3px, transparent 4px) 32% 45%/60px 60px no-repeat,
+    radial-gradient(circle at 20% 20%, var(--candle) 0 3px, transparent 4px) 68% 25%/60px 60px no-repeat,
+    radial-gradient(circle at 20% 20%, var(--candle) 0 3px, transparent 4px) 88% 50%/60px 60px no-repeat;
+  clip-path:polygon(0% 100%,0% 55%,6% 55%,6% 35%,12% 35%,12% 20%,18% 20%,18% 40%,26% 40%,26% 55%,34% 55%,34% 15%,40% 15%,40% 0%,46% 0%,46% 15%,52% 15%,52% 55%,60% 55%,60% 30%,66% 30%,66% 10%,72% 10%,72% 30%,78% 30%,78% 55%,86% 55%,86% 40%,92% 40%,92% 60%,100% 60%,100% 100%);
+  opacity:.55;
+}
+.floating-particles{position:absolute; inset:0;}
+.particle{
+  position:absolute; bottom:-10px; border-radius:50%;
+  background:radial-gradient(circle, #fff9d6 0%, rgba(255,249,214,0) 70%);
+  animation:floatUp linear infinite;
+  opacity:.8;
+}
+@keyframes floatUp{
+  0%{transform:translateY(0) translateX(0); opacity:0;}
+  10%{opacity:.9;}
+  100%{transform:translateY(-110vh) translateX(20px); opacity:0;}
+}
+
+/* ---------------- WELCOME SCREEN ---------------- */
+.welcome-screen{
+  position:fixed; inset:0; z-index:100;
+  display:flex; align-items:center; justify-content:center;
+  background:radial-gradient(circle at center, #1c2450 0%, #05060f 80%);
+  padding:16px;
+  animation:fadeIn .6s ease;
+}
+.welcome-screen.hidden{display:none;}
+@keyframes fadeIn{from{opacity:0;} to{opacity:1;}}
+.welcome-card{
+  max-width:560px; width:100%; text-align:center; padding:40px 30px;
+  animation:riseIn .8s ease;
+}
+@keyframes riseIn{from{transform:translateY(40px); opacity:0;} to{transform:translateY(0); opacity:1;}}
+.candles-row{font-size:1.6rem; margin-bottom:10px;}
+.welcome-title{font-family:var(--font-display); font-size:2rem; color:var(--text-dark); margin:.2em 0; text-shadow:1px 1px 0 rgba(211,166,37,.4);}
+.welcome-subtitle{font-family:var(--font-head); font-weight:700; color:#5b3d17; margin:0 0 14px;}
+.welcome-text{color:var(--text-dark); line-height:1.5; font-size:1.05rem;}
+.welcome-houses{font-size:2rem; margin:16px 0; letter-spacing:14px;}
+.sync-status{font-size:.85rem; color:#5b3d17; opacity:.85; min-height:1.2em; margin-bottom:14px;}
+
+/* ---------------- PARCHMENT SURFACES ---------------- */
+.parchment, .parchment-card, .parchment-lite{
+  background:
+    radial-gradient(120% 120% at 10% 0%, #fbf3da 0%, var(--parchment) 45%, var(--parchment-dark) 100%);
+  border:2px solid #b9944f;
+  border-radius:var(--radius);
+  box-shadow:var(--shadow-deep), inset 0 0 40px rgba(120,80,20,.15);
+  color:var(--text-dark);
+}
+.parchment-card{padding:22px 24px; margin-bottom:24px;}
+.parchment-lite{padding:28px; text-align:center; margin-bottom:30px;}
+
+/* ---------------- TOP BAR ---------------- */
+.topbar{
+  position:sticky; top:0; z-index:40;
+  display:flex; align-items:center; gap:14px;
+  padding:12px 18px;
+  background:linear-gradient(180deg, #171f45 0%, #0d1230 100%);
+  border-bottom:2px solid var(--gold);
+  box-shadow:0 4px 18px rgba(0,0,0,.4);
+}
+.hamburger{
+  background:none; border:2px solid var(--gold); color:var(--gold-bright);
+  font-size:1.3rem; border-radius:8px; width:42px; height:42px; cursor:pointer;
+}
+.brand{font-family:var(--font-head); font-weight:700; font-size:1.15rem; color:var(--gold-bright); cursor:pointer; flex:1;}
+.top-controls{display:flex; align-items:center; gap:8px;}
+.class-badge{
+  background:rgba(211,166,37,.15); border:1px solid var(--gold); color:var(--gold-bright);
+  padding:6px 12px; border-radius:20px; font-weight:700; font-size:.85rem;
+}
+.icon-btn{
+  width:42px; height:42px; border-radius:50%; border:2px solid var(--gold);
+  background:rgba(255,255,255,.05); color:var(--gold-bright); font-size:1.1rem; cursor:pointer;
+  transition:transform .15s;
+}
+.icon-btn:hover{transform:scale(1.1); box-shadow:0 0 12px var(--gold);}
+.icon-btn.off{opacity:.4; filter:grayscale(1);}
+
+/* ---------------- NAVIGATION ---------------- */
+.sidenav{
+  position:fixed; top:0; left:-280px; bottom:0; width:270px; z-index:60;
+  background:linear-gradient(180deg,#141a3c,#0a0e22);
+  border-right:2px solid var(--gold);
+  padding:80px 14px 20px; overflow-y:auto;
+  display:flex; flex-direction:column; gap:6px;
+  transition:left .3s ease;
+}
+.sidenav.open{left:0;}
+.nav-item{
+  text-align:left; background:none; border:1px solid transparent; color:var(--parchment);
+  padding:11px 14px; border-radius:10px; font-size:.95rem; font-weight:600; cursor:pointer;
+  transition:background .15s, border-color .15s, transform .15s;
+}
+.nav-item:hover{background:rgba(211,166,37,.15); border-color:var(--gold); transform:translateX(3px);}
+.nav-item.active{background:rgba(211,166,37,.28); border-color:var(--gold-bright); color:var(--gold-bright);}
+.nav-overlay{position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:50; display:none;}
+.nav-overlay.show{display:block;}
+
+/* ---------------- MAIN / VIEWS ---------------- */
+main{max-width:1180px; margin:0 auto; padding:26px 18px 80px;}
+.view{display:none; animation:viewIn .35s ease;}
+.view.active{display:block;}
+@keyframes viewIn{from{opacity:0; transform:translateY(12px);} to{opacity:1; transform:translateY(0);}}
+
+.page-title{font-family:var(--font-head); font-size:clamp(1.5rem,4vw,2.3rem); color:var(--gold-bright); margin:6px 0 2px; text-shadow:0 0 14px rgba(211,166,37,.35);}
+.page-subtitle{color:#cbd2f2; margin:0 0 22px; font-weight:600;}
+.section-heading{font-family:var(--font-head); color:var(--gold-bright); margin:34px 0 14px; font-size:1.4rem;}
+.hero-msg{max-width:640px; margin:0 auto 20px; font-size:1.05rem; line-height:1.6;}
+.hero-buttons{display:flex; gap:16px; justify-content:center; flex-wrap:wrap;}
+.closing-line{text-align:center; margin-top:50px; font-family:var(--font-head); color:var(--gold-bright); line-height:1.9; font-size:1.1rem;}
+
+/* ---------------- BUTTONS ---------------- */
+.btn{
+  font-family:var(--font-head); font-weight:700; cursor:pointer; border:none; border-radius:12px;
+  padding:12px 20px; font-size:1rem; color:#241708; letter-spacing:.3px;
+  background:linear-gradient(180deg, var(--gold-bright), var(--gold));
+  box-shadow:0 4px 0 #8a6a15, 0 8px 16px rgba(0,0,0,.35);
+  transition:transform .12s, box-shadow .12s;
+}
+.btn:hover{transform:translateY(-2px);}
+.btn:active{transform:translateY(1px); box-shadow:0 2px 0 #8a6a15;}
+.btn-large{padding:16px 30px; font-size:1.15rem; border-radius:14px;}
+.btn-gold{background:linear-gradient(180deg, var(--gold-bright), var(--gold)); color:#241708;}
+.btn-purple{background:linear-gradient(180deg,#a288e3,#6c4fc4); color:#fff; box-shadow:0 4px 0 #4a3489,0 8px 16px rgba(0,0,0,.35);}
+.btn-danger{background:linear-gradient(180deg,#e26b6b,#b23a3a); color:#fff; box-shadow:0 4px 0 #7c2323,0 8px 16px rgba(0,0,0,.35);}
+.btn-house{background:linear-gradient(180deg,#2b3570,#1a2050); color:#f3e6c8; border:2px solid var(--gold); box-shadow:0 4px 0 #10142e,0 8px 16px rgba(0,0,0,.35);}
+.btn-small{padding:6px 12px; font-size:.82rem; border-radius:8px;}
+.btn:disabled{opacity:.5; cursor:not-allowed; transform:none;}
+
+/* ---------------- INPUTS ---------------- */
+.input{
+  font-family:var(--font-body); padding:10px 14px; border-radius:10px; border:2px solid #48508c;
+  background:#101635; color:#f3e6c8; font-size:.95rem; font-weight:600;
+}
+.input.small{width:70px; text-align:center;}
+.input:focus, .btn:focus, .nav-item:focus, .icon-btn:focus{outline:3px solid var(--candle); outline-offset:2px;}
+.toolbar{display:flex; flex-wrap:wrap; gap:10px; margin-bottom:20px; align-items:center;}
+
+/* ---------------- HOUSE CARDS / GRID ---------------- */
+.house-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(230px,1fr)); gap:18px; margin-bottom:10px;}
+.house-card{
+  border-radius:16px; padding:20px; color:#fff; position:relative; overflow:hidden;
+  box-shadow:var(--shadow-deep); border:2px solid rgba(255,255,255,.25);
+  transition:transform .2s;
+}
+.house-card:hover{transform:translateY(-4px);}
+.house-card.gryffindor{background:linear-gradient(160deg,var(--gryffindor),var(--gryffindor-2));}
+.house-card.slytherin{background:linear-gradient(160deg,var(--slytherin),var(--slytherin-2));}
+.house-card.ravenclaw{background:linear-gradient(160deg,var(--ravenclaw),var(--ravenclaw-2));}
+.house-card.hufflepuff{background:linear-gradient(160deg,#5b4a12,var(--hufflepuff)); color:#2b2210;}
+.house-card .h-icon{font-size:2.4rem;}
+.house-card .h-name{font-family:var(--font-head); font-size:1.3rem; font-weight:700; margin:4px 0;}
+.house-card .h-points{font-size:2rem; font-weight:800; font-family:var(--font-head);}
+.house-card .h-points.bump{animation:pointBump .5s ease;}
+@keyframes pointBump{0%{transform:scale(1);} 40%{transform:scale(1.3); color:var(--gold-bright);} 100%{transform:scale(1);}}
+.house-actions{display:flex; gap:8px; margin-top:14px; flex-wrap:wrap;}
+.house-actions .btn{flex:1; min-width:100px;}
+
+/* ---------------- LEADERBOARD ---------------- */
+.leaderboard{display:grid; grid-template-columns:repeat(auto-fit,minmax(230px,1fr)); gap:16px;}
+.lb-row{
+  display:flex; align-items:center; gap:14px; padding:14px 18px; border-radius:14px;
+  background:rgba(255,255,255,.06); border:2px solid rgba(255,255,255,.15);
+  transition:transform .4s ease, background .4s;
+}
+.lb-row.rank-1{border-color:var(--gold-bright); background:rgba(211,166,37,.18); order:-4;}
+.lb-medal{font-size:1.8rem;}
+.lb-info{flex:1;}
+.lb-name{font-family:var(--font-head); font-weight:700;}
+.lb-points{font-weight:800; font-size:1.2rem; color:var(--gold-bright);}
+
+/* ---------------- CLASSROOM / HOUSE COLUMNS (drag & drop) ---------------- */
+.house-columns{display:grid; grid-template-columns:repeat(auto-fit,minmax(230px,1fr)); gap:16px;}
+.house-col{
+  border-radius:16px; padding:14px; min-height:220px; color:#fff;
+  border:2px dashed rgba(255,255,255,.35);
+}
+.house-col.gryffindor{background:linear-gradient(160deg,rgba(116,0,1,.85),rgba(174,0,1,.85));}
+.house-col.slytherin{background:linear-gradient(160deg,rgba(13,40,24,.85),rgba(26,71,42,.85));}
+.house-col.ravenclaw{background:linear-gradient(160deg,rgba(14,26,64,.85),rgba(34,47,91,.85));}
+.house-col.hufflepuff{background:linear-gradient(160deg,rgba(91,74,18,.85),rgba(236,185,57,.85)); color:#2b2210;}
+.house-col.dragover{outline:3px solid var(--candle); outline-offset:-3px;}
+.house-col h3{font-family:var(--font-head); margin:2px 0 10px; display:flex; justify-content:space-between;}
+/* (unassigned-house UI removed — every student now belongs to a real house) */
+
+/* ---------------- POINT BREAKDOWN / CAPS ---------------- */
+.points-breakdown{font-size:.8rem; opacity:.9; margin-top:2px; font-weight:600;}
+.btn.tab-active{outline:3px solid var(--candle); outline-offset:2px;}
+.student-chip{
+  background:rgba(255,255,255,.18); border-radius:10px; padding:8px 10px; margin-bottom:8px;
+  display:flex; justify-content:space-between; align-items:center; cursor:grab; font-weight:600; font-size:.9rem;
+  gap:6px;
+}
+.student-chip:active{cursor:grabbing;}
+.student-chip .chip-actions{display:flex; gap:2px;}
+.student-chip .chip-actions button{background:none; border:none; color:inherit; cursor:pointer; font-size:.95rem; opacity:.85; padding:2px;}
+.student-chip .chip-actions button:hover{opacity:1; transform:scale(1.15);}
+
+/* ---------------- TABLES ---------------- */
+.table-wrap{overflow-x:auto; border-radius:14px; border:2px solid #3d447c;}
+.data-table{width:100%; border-collapse:collapse; background:#0f1430; min-width:520px;}
+.data-table th, .data-table td{padding:10px 14px; text-align:left; border-bottom:1px solid #2b3163; font-size:.92rem;}
+.data-table th{background:#1a2150; color:var(--gold-bright); font-family:var(--font-head);}
+.data-table tr:hover{background:#161c42;}
+.pos{color:#7be08d; font-weight:700;}
+.neg{color:#ef8a8a; font-weight:700;}
+
+/* ---------------- PARTICIPATION ---------------- */
+/* participation & earn-points UI removed */
+
+/* ---------------- RULES ---------------- */
+.rules-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:20px;}
+.parchment-card h3{font-family:var(--font-head); margin-top:0; font-size:1.25rem;}
+.parchment-card ol{padding-left:20px; line-height:1.7;}
+.warning-banner{
+  margin-top:26px; text-align:center; font-family:var(--font-head); font-size:1.15rem;
+  color:#2b0000; background:linear-gradient(90deg,var(--hufflepuff),var(--gold-bright));
+  padding:16px; border-radius:14px; animation:warningPulse 1.8s infinite;
+  border:2px solid #7a5a00;
+}
+@keyframes warningPulse{0%,100%{box-shadow:0 0 6px rgba(255,200,0,.4);} 50%{box-shadow:0 0 26px rgba(255,200,0,.9);}}
+
+/* ---------------- EARN POINTS ---------------- */
+
+/* ---------------- CEREMONY ---------------- */
+.ceremony-audio-select{display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:12px; margin-bottom:8px;}
+.ceremony-audio-select div{background:rgba(255,255,255,.05); border:1px solid var(--gold); border-radius:10px; padding:10px;}
+.ceremony-audio-select label{display:block; margin-bottom:6px; font-weight:700;}
+.hint-text{color:#aab0d8; font-size:.85rem; margin-bottom:20px;}
+.ceremony-stage{
+  margin-top:26px; min-height:260px; border-radius:18px; padding:26px; text-align:center;
+  background:radial-gradient(circle at center, #1c2450, #05060f 85%);
+  border:2px solid var(--gold); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:14px;
+}
+.ceremony-countdown{font-family:var(--font-display); font-size:4rem; color:var(--gold-bright); animation:countPulse .9s ease;}
+@keyframes countPulse{0%{transform:scale(2); opacity:0;} 60%{opacity:1;} 100%{transform:scale(1);}}
+.ceremony-place{font-family:var(--font-head); font-size:1.3rem; color:var(--parchment);}
+.ceremony-house-reveal{font-size:3rem; font-family:var(--font-display); animation:revealPop .6s ease;}
+@keyframes revealPop{from{transform:scale(.4) rotate(-8deg); opacity:0;} to{transform:scale(1) rotate(0); opacity:1;}}
+.ceremony-winner{font-size:1.6rem; color:var(--gold-bright); text-shadow:0 0 20px var(--gold);}
+
+/* ---------------- REWARDS ---------------- */
+.rewards-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:18px; margin-bottom:20px;}
+.reward-card{padding:20px;}
+.reward-card h3{font-family:var(--font-head); margin-top:0;}
+.reward-card textarea{width:100%; min-height:110px; font-family:var(--font-body); font-size:.92rem; border-radius:10px; border:1px solid #b9944f; padding:8px; resize:vertical; background:#fffdf6; display:none;}
+.reward-card.editing textarea{display:block;}
+.reward-card.editing .reward-text{display:none;}
+
+/* ---------------- SETTINGS ---------------- */
+.settings-row{display:flex; gap:16px; flex-wrap:wrap; align-items:center; margin-top:10px;}
+.settings-row label{font-weight:700; display:flex; flex-direction:column; gap:4px; font-size:.85rem;}
+.switch-row{display:flex; align-items:center; gap:10px; font-weight:700; margin:8px 0; cursor:pointer;}
+.switch-row input{width:20px; height:20px;}
+
+/* ---------------- MODAL ---------------- */
+.modal-overlay{
+  position:fixed; inset:0; background:rgba(0,0,0,.65); z-index:200; display:none;
+  align-items:center; justify-content:center; padding:16px;
+}
+.modal-overlay.show{display:flex;}
+.modal{max-width:420px; width:100%; padding:26px; animation:riseIn .3s ease;}
+.modal h3{font-family:var(--font-head); margin-top:0;}
+.modal label{display:block; font-weight:700; margin:12px 0 4px;}
+.modal input, .modal select, .modal textarea{width:100%; padding:10px; border-radius:8px; border:1px solid #b9944f; font-family:var(--font-body); font-size:.95rem;}
+.modal-actions{display:flex; gap:10px; justify-content:flex-end; margin-top:18px;}
+
+/* ---------------- FX CANVAS ---------------- */
+#fxCanvas{position:fixed; inset:0; z-index:150; pointer-events:none; display:none;}
+#fxCanvas.show{display:block;}
+
+/* ---------------- STUDENT LEADERBOARD ---------------- */
+.student-leaderboard{list-style:none; padding:0; display:grid; gap:8px; max-width:520px;}
+.student-leaderboard li{
+  background:rgba(255,255,255,.06); border:1px solid #3d447c; border-radius:10px; padding:10px 16px;
+  display:flex; justify-content:space-between; font-weight:700;
+}
+.privacy-hidden-msg{color:#aab0d8; font-style:italic;}
+
+/* ---------------- TOASTS ---------------- */
+.toast{
+  position:fixed; bottom:20px; left:50%; transform:translateX(-50%); z-index:300;
+  background:linear-gradient(180deg,var(--gold-bright),var(--gold)); color:#241708; font-weight:700;
+  padding:12px 22px; border-radius:30px; box-shadow:var(--shadow-deep); animation:toastIn .3s ease;
+}
+@keyframes toastIn{from{opacity:0; transform:translate(-50%,20px);} to{opacity:1; transform:translate(-50%,0);}}
+
+/* ---------------- RESPONSIVE ---------------- */
+@media (max-width:720px){
+  .topbar{padding:10px;}
+  .brand{font-size:.95rem;}
+  main{padding:18px 12px 80px;}
+  .hero-buttons{flex-direction:column;}
+  .hero-buttons .btn{width:100%;}
+  .ceremony-house-reveal{font-size:2.1rem;}
+}
+
+</style>
+</head>
+<body>
+
+<!-- ===================== MAGICAL BACKGROUND LAYERS ===================== -->
+<div class="bg-layer" id="bgLayer" aria-hidden="true">
+  <div class="stars"></div>
+  <div class="floating-particles" id="particles"></div>
+  <div class="castle-silhouette"></div>
+</div>
+
+<!-- ===================== WELCOME SCREEN ===================== -->
+<div class="welcome-screen" id="welcomeScreen">
+  <div class="welcome-card parchment">
+    <div class="candles-row" aria-hidden="true">🕯️ 🕯️ 🕯️</div>
+    <h1 class="welcome-title">🏰 The Wizarding House Cup</h1>
+    <p class="welcome-subtitle">6A and 6B Classroom Championship</p>
+    <p class="welcome-text">Welcome, young witches and wizards! Earn points for your house through
+      participation, teamwork, respect, and excellent behavior!</p>
+    <div class="welcome-houses" aria-hidden="true">
+      <span>🦁</span><span>🐍</span><span>🦅</span><span>🦡</span>
+    </div>
+    <p id="syncStatus" class="sync-status">🔮 Summoning your saved data...</p>
+    <button class="btn btn-gold btn-large" id="enterSiteBtn">✨ Enter the Great Hall ✨</button>
+  </div>
+</div>
+
+<!-- ===================== TOP BAR ===================== -->
+<header class="topbar">
+  <button class="hamburger" id="hamburgerBtn" aria-label="Open menu" aria-expanded="false">☰</button>
+  <div class="brand" id="brandHome">🏰 The Wizarding House Cup</div>
+  <div class="top-controls">
+    <span class="class-badge" id="activeClassBadge">Class: 6A</span>
+    <button class="icon-btn" id="soundToggleBtn" title="Toggle sound effects">🔊</button>
+    <button class="icon-btn" id="musicToggleBtn" title="Play/pause background music">🎵</button>
+    <button class="icon-btn" id="animToggleBtn" title="Toggle animations">✨</button>
+  </div>
+</header>
+
+<!-- ===================== NAVIGATION ===================== -->
+<nav class="sidenav" id="sideNav" aria-label="Main navigation">
+  <button class="nav-item" data-view="home">🏰 Home</button>
+  <button class="nav-item" data-class="6A" data-view="classroom">📚 Class 6A</button>
+  <button class="nav-item" data-class="6B" data-view="classroom">📚 Class 6B</button>
+  <button class="nav-item" data-view="points">🏆 House Points</button>
+  <button class="nav-item" data-view="leaderboards">📊 Leaderboards</button>
+  <button class="nav-item" data-view="rules">⚠️ Rules</button>
+  <button class="nav-item" data-view="ceremony">🎉 Ceremonies</button>
+  <button class="nav-item" data-view="rewards">🏆 Final Rewards</button>
+  <button class="nav-item" data-view="settings">⚙️ Teacher Settings</button>
+</nav>
+<div class="nav-overlay" id="navOverlay"></div>
+
+<!-- ===================== MAIN CONTENT ===================== -->
+<main id="app">
+
+  <!-- ---------- HOME ---------- -->
+  <section class="view active" id="view-home">
+    <div class="hero parchment-lite">
+      <h1 class="page-title">🏰 The Wizarding House Cup</h1>
+      <p class="page-subtitle">6A and 6B Classroom Championship</p>
+      <p class="hero-msg">Welcome, young witches and wizards! Earn points for your house through participation, teamwork, respect, and excellent behavior!</p>
+      <div class="hero-buttons">
+        <button class="btn btn-large btn-house" data-class="6A" data-view="classroom">📚 Enter Class 6A</button>
+        <button class="btn btn-large btn-house" data-class="6B" data-view="classroom">📚 Enter Class 6B</button>
+      </div>
+    </div>
+
+    <p class="hint-text" style="text-align:center;">Class 6A and Class 6B run their own completely independent House Cup — points are never mixed between them.</p>
+
+    <h2 class="section-heading">📚 Class 6A — Houses &amp; Leaderboard</h2>
+    <div class="house-grid" id="homeHouseGrid6A"></div>
+    <div class="leaderboard" id="homeLeaderboard6A"></div>
+
+    <h2 class="section-heading">📚 Class 6B — Houses &amp; Leaderboard</h2>
+    <div class="house-grid" id="homeHouseGrid6B"></div>
+    <div class="leaderboard" id="homeLeaderboard6B"></div>
+
+    <p class="closing-line">🏰✨ "Together, we learn. Together, we participate. Together, we make magic!" 🏆<br>May the best house win the House Cup!</p>
+  </section>
+
+  <!-- ---------- CLASSROOM MANAGEMENT ---------- -->
+  <section class="view" id="view-classroom">
+    <h1 class="page-title" id="classroomTitle">📚 Class 6A</h1>
+    <p class="page-subtitle">Manage students, houses, and daily class life</p>
+
+    <div class="toolbar">
+      <input type="text" id="studentSearch" placeholder="🔍 Search a student..." class="input">
+      <button class="btn btn-gold" id="addStudentBtn">➕ Add Student</button>
+      <button class="btn btn-gold" id="bulkAddBtn">📋 Add Multiple Students</button>
+    </div>
+
+    <div class="house-columns" id="houseColumns"></div>
+  </section>
+
+  <!-- ---------- HOUSE POINTS ---------- -->
+  <section class="view" id="view-points">
+    <h1 class="page-title">🏆 House Points — <span id="pointsClassLabel">6A</span></h1>
+    <p class="page-subtitle">Award or deduct points for behavior, teamwork, and effort. Every point counts toward today, this week, and the whole term at once.</p>
+    <div class="house-grid" id="pointsHouseGrid"></div>
+  </section>
+
+  <!-- ---------- LEADERBOARDS ---------- -->
+  <section class="view" id="view-leaderboards">
+    <h1 class="page-title">📊 Leaderboards</h1>
+    <p class="page-subtitle">Class 6A and Class 6B each have their own independent House Cup</p>
+    <div class="toolbar" id="lbTabs">
+      <button class="btn btn-house" data-period="daily">📅 Daily</button>
+      <button class="btn btn-house" data-period="weekly">🗓️ Weekly</button>
+      <button class="btn btn-house" data-period="term">🏆 Term</button>
+    </div>
+    <h2 class="section-heading" id="lbPeriodHeading">🏆 Term Leaderboard</h2>
+    <h3>📚 Class 6A</h3>
+    <div class="leaderboard" id="fullLeaderboard6A"></div>
+    <h3>📚 Class 6B</h3>
+    <div class="leaderboard" id="fullLeaderboard6B"></div>
+    <h2 class="section-heading">⭐ Most Active Wizards and Witches</h2>
+    <div id="studentLeaderboardWrap">
+      <ol class="student-leaderboard" id="studentLeaderboard"></ol>
+    </div>
+  </section>
+
+  <!-- ---------- RULES ---------- -->
+  <section class="view" id="view-rules">
+    <h1 class="page-title">⚠️ Protect Your House Points!</h1>
+    <p class="page-subtitle">Follow the rules and help your house win the House Cup!</p>
+    <div class="rules-grid">
+      <div class="parchment-card">
+        <h3>🪄 Discipline</h3>
+        <ol>
+          <li>Stay at your desk and avoid walking around the classroom without permission.</li>
+          <li>Focus on the class and avoid playing or doing something unrelated to the activity.</li>
+          <li>Keep the classroom quiet and avoid shouting or talking too loudly.</li>
+        </ol>
+      </div>
+      <div class="parchment-card">
+        <h3>🤝 Respect</h3>
+        <ol>
+          <li>Listen carefully when the teacher or classmates are speaking.</li>
+          <li>Do not interrupt others when they are speaking.</li>
+          <li>Raise your hand when you want to speak.</li>
+          <li>Respect other people's turn to speak and avoid speaking over someone else.</li>
+        </ol>
+      </div>
+    </div>
+    <div class="warning-banner">⚠️ Breaking these rules may cause your house to lose points!</div>
+  </section>
+
+  <!-- ---------- CEREMONIES ---------- -->
+  <section class="view" id="view-ceremony">
+    <h1 class="page-title">🎉 House Cup Ceremonies — Class <span id="ceremonyClassLabel">6A</span></h1>
+    <p class="page-subtitle">Reveal results with music and magic. Each class has its own independent ceremonies.</p>
+
+    <div class="ceremony-audio-select">
+      <div><label>🎵 4th Place Music: </label><input type="file" accept="audio/*" data-slot="4"></div>
+      <div><label>🎵 3rd Place Music: </label><input type="file" accept="audio/*" data-slot="3"></div>
+      <div><label>🎵 2nd Place Music: </label><input type="file" accept="audio/*" data-slot="2"></div>
+      <div><label>🎵 Winning House Music: </label><input type="file" accept="audio/*" data-slot="1"></div>
+    </div>
+    <p class="hint-text">Use only royalty-free, licensed, or teacher-owned audio. Music does not play automatically. The same four tracks are used for every ceremony below.</p>
+
+    <div class="parchment-card">
+      <h3>🗓️ Weekly Ceremony</h3>
+      <p>Reveals this week's ranking with a dramatic countdown and fireworks for the winner.</p>
+      <div class="settings-row">
+        <button class="btn btn-large btn-gold" id="revealCeremonyBtn">🏆 REVEAL THIS WEEK'S RESULTS</button>
+        <button class="btn" id="resetWeeklyBtn">🔄 Reset Weekly Points</button>
+      </div>
+      <div class="ceremony-stage" id="ceremonyStageWeekly"></div>
+    </div>
+
+    <div class="parchment-card">
+      <h3>🏁 End-of-Term Ceremony</h3>
+      <p>The grand finale! Reveals the final House Cup standings for the whole term, based on total points earned all year.</p>
+      <button class="btn btn-large btn-gold" id="revealTermBtn">🏁 REVEAL THE FINAL TERM RESULTS</button>
+      <div class="ceremony-stage" id="ceremonyStageTerm"></div>
+    </div>
+  </section>
+
+  <!-- ---------- FINAL REWARDS ---------- -->
+  <section class="view" id="view-rewards">
+    <h1 class="page-title">🏆 The Final House Cup Rewards</h1>
+    <div class="rewards-grid" id="rewardsGrid"></div>
+    <button class="btn btn-gold" id="editRewardsBtn">✏️ Edit Rewards</button>
+  </section>
+
+  <!-- ---------- SETTINGS ---------- -->
+  <section class="view" id="view-settings">
+    <h1 class="page-title">⚙️ Teacher Control Panel</h1>
+
+    <div class="settings-block parchment-card">
+      <h3>👁️ Privacy</h3>
+      <label class="switch-row"><input type="checkbox" id="studentLbToggle"> Show Student Participation Leaderboard</label>
+      <label class="switch-row"><input type="checkbox" id="animToggleSetting"> Enable Animations</label>
+      <label class="switch-row"><input type="checkbox" id="soundToggleSetting"> Enable Sound Effects</label>
+    </div>
+
+    <div class="settings-block parchment-card">
+      <h3>💾 Data Management</h3>
+      <div class="settings-row">
+        <button class="btn btn-gold" id="saveDataBtn">💾 Save Data</button>
+        <button class="btn btn-purple" id="exportDataBtn">📊 Export Data (JSON)</button>
+        <button class="btn btn-purple" id="importDataBtn">📂 Import Data (JSON)</button>
+        <input type="file" id="importDataInput" accept="application/json" style="display:none;">
+        <button class="btn btn-purple" id="exportExcelBtn">📗 Export to Excel</button>
+        <button class="btn btn-danger" id="resetDataBtn">🔄 Reset All Data</button>
+      </div>
+      <p class="hint-text" id="storageHint">Data is saved automatically to this browser's local storage. This project is structured so it can later connect to Firebase or Supabase (see script.js — DataStore).</p>
+      <p class="hint-text">💡 If you're running this file locally (downloaded, opened by double-clicking it) and notice your data disappears when you reopen it, some browsers restrict storage for local files. Use <strong>📊 Export Data</strong> right before closing, and <strong>📂 Import Data</strong> the next time you open the file, to carry your progress over reliably.</p>
+    </div>
+  </section>
+
+</main>
+
+<!-- ===================== GENERIC MODAL ===================== -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal parchment-card" id="modalBox"></div>
+</div>
+
+<!-- Confetti / celebration canvas layer -->
+<canvas id="fxCanvas"></canvas>
+
+<audio id="ceremonyAudio" preload="auto"></audio>
+<audio id="bgMusic" loop preload="none"></audio>
+
+<script>
+/* =============================================================================
+   THE WIZARDING HOUSE CUP — script.js
+   Vanilla JS. No frameworks. Structured so the DataStore layer can later be
+   swapped for Firebase / Supabase without touching the rest of the app —
+   every read/write goes through DataStore.load()/DataStore.save().
+   ============================================================================= */
+
+/* ---------------------------------------------------------------------------
+   1. DATA STORE
+   Cross-device, no-login sharing: this app tries Anthropic's artifact
+   storage (window.storage) first, using SHARED storage — meaning anyone who
+   opens this link sees and edits the same House Cup, with no claude.ai
+   account or sign-in required on their end. That's what makes it easy to
+   open on a phone, another computer, or hand the link to a co-teacher, and
+   see the exact same students and points.
+   ⚠️ Because it's shared, anyone with the link can view and change the data
+   — there's no per-person login separating one visitor from another.
+   If window.storage isn't available (e.g. the file was downloaded and
+   opened directly, outside claude.ai), it falls back to this browser's
+   local storage only. Every read/write in the app goes through
+   DataStore.load()/DataStore.save(), so swapping in Firebase/Supabase later
+   only means editing this one object.
+--------------------------------------------------------------------------- */
+const DataStore = {
+  KEY: 'wizardHouseCupData_v1',
+  _cloudDisabled: false, // flips true after a real failure, so we stop hammering it (and the console) on every save
+  hasCloud(){
+    return !this._cloudDisabled
+      && typeof window.storage !== 'undefined' && window.storage
+      && typeof window.storage.get === 'function' && typeof window.storage.set === 'function';
+  },
+  /* Some browsers (notably Chrome, in some configurations) refuse to persist
+     localStorage for pages opened via file:// — writes silently vanish on
+     reload even though setItem() doesn't throw. This does a real
+     write-then-reread round trip to catch that, so the app can tell the
+     teacher honestly instead of pretending it saved. */
+  localStorageWorks(){
+    try{
+      const testKey = '__whc_storage_test__';
+      localStorage.setItem(testKey, '1');
+      const ok = localStorage.getItem(testKey) === '1';
+      localStorage.removeItem(testKey);
+      return ok;
+    }catch(e){ return false; }
+  },
+  loadLocal(){
+    try{
+      const raw = localStorage.getItem(this.KEY);
+      return raw ? JSON.parse(raw) : null;
+    }catch(e){ console.warn('Local storage read failed', e); return null; }
+  },
+  saveLocal(state){
+    try{ localStorage.setItem(this.KEY, JSON.stringify(state)); return true; }
+    catch(e){ console.warn('Local storage write failed', e); return false; }
+  },
+  async load(){
+    if(this.hasCloud()){
+      // Try twice — the very first call after the page opens can occasionally
+      // race the host connection, so one short retry clears most false alarms.
+      for(let attempt=0; attempt<2; attempt++){
+        try{
+          const result = await window.storage.get(this.KEY, true); // true = shared with anyone who has the link, no login needed
+          if(result && typeof result.value === 'string'){
+            const parsed = JSON.parse(result.value);
+            this.saveLocal(parsed); // keep a fast local cache too
+            return parsed;
+          }
+          break; // a clean "nothing saved yet" response — no need to retry
+        }catch(e){
+          if(attempt===0){ await new Promise(r=>setTimeout(r, 500)); continue; }
+          console.warn('Shared cloud storage is unavailable right now — using this device\'s local storage instead.', e);
+          this._cloudDisabled = true;
+        }
+      }
+    }
+    return this.loadLocal();
+  },
+  async save(state){
+    // Kept for compatibility — always saves locally, and fires a cloud sync.
+    // Frequent callers should prefer persist()/scheduleCloudSync(), which
+    // debounce cloud writes so rapid clicks don't hammer the backend.
+    this.saveLocal(state);
+    return this.saveCloud(state);
+  },
+  async saveCloud(state){
+    if(!this.hasCloud()) return true; // nothing to do — already local-only
+    // Try twice — a single transient hiccup (including brief rate limiting
+    // from several quick saves in a row) shouldn't take cloud sync offline.
+    for(let attempt=0; attempt<2; attempt++){
+      try{
+        await window.storage.set(this.KEY, JSON.stringify(state), true);
+        return true;
+      }catch(e){
+        if(attempt===0){ await new Promise(r=>setTimeout(r, 600)); continue; }
+        console.warn('Shared cloud storage write failed — saved locally only from now on.', e);
+        this._cloudDisabled = true; // stop retrying every future save; avoids repeated console errors
+        return false;
+      }
+    }
+  }
+};
+
+const HOUSES = {
+  gryffindor:{ name:'Gryffindor', icon:'🦁', cls:'gryffindor' },
+  slytherin:{ name:'Slytherin', icon:'🐍', cls:'slytherin' },
+  ravenclaw:{ name:'Ravenclaw', icon:'🦅', cls:'ravenclaw' },
+  hufflepuff:{ name:'Hufflepuff', icon:'🦡', cls:'hufflepuff' }
+};
+const HOUSE_KEYS = Object.keys(HOUSES);
+const MEDALS = ['🥇','🥈','🥉','🏅'];
+
+function emptyHousePoints(){
+  const o = {};
+  HOUSE_KEYS.forEach(h => o[h] = { daily:0, weekly:0, total:0 });
+  return o;
+}
+
+function defaultState(){
+  return {
+    currentClass:'6A',
+    classes:{
+      '6A':{ students:[], housePoints: emptyHousePoints(), lastDailyDate: todayISO() },
+      '6B':{ students:[], housePoints: emptyHousePoints(), lastDailyDate: todayISO() }
+    },
+    pointHistory:[],
+    studentPoints:[],
+    settings:{
+      soundOn:true,
+      animationsOn:true,
+      studentLeaderboardVisible:true,
+      teacherName:'Teacher',
+      rewards:{
+        first:"🏆 The House Cup. ✨ A special champion celebration. 📈 The chance to replace ONE poor grade with a better grade (per the teacher's academic policy). ⭐ The maximum behavior grade.",
+        second:"📈 The chance to improve or replace ONE poor grade up to the minimum passing grade, according to the teacher's academic policy.",
+        third:"⭐ A bonus of +0.1 added to the final grade, according to the teacher's grading policy.",
+        fourth:"Every wizard can improve! The next House Cup could be yours!"
+      }
+    }
+  };
+}
+
+/* Bring older saved data up to date with the current data shape, without
+   ever discarding existing points/students/history. */
+function migrateState(){
+  ['6A','6B'].forEach(cls=>{
+    const c = state.classes[cls];
+    if(!c) return;
+    HOUSE_KEYS.forEach(h=>{
+      if(!c.housePoints[h]) c.housePoints[h] = { daily:0, weekly:0, total:0 };
+      if(typeof c.housePoints[h].daily !== 'number') c.housePoints[h].daily = 0;
+      if(typeof c.housePoints[h].weekly !== 'number') c.housePoints[h].weekly = 0;
+      if(typeof c.housePoints[h].total !== 'number') c.housePoints[h].total = 0;
+    });
+    if(!c.lastDailyDate) c.lastDailyDate = todayISO();
+    delete c.participationToday;
+    // Every student now belongs to a house — the "Unassigned" space was removed.
+    c.students.forEach(s=>{ if(!s.house) s.house = HOUSE_KEYS[Math.floor(Math.random()*HOUSE_KEYS.length)]; });
+  });
+  delete state.participationHistory;
+  if(!state.studentPoints) state.studentPoints = [];
+  delete state.settings.pointCaps;
+  delete state.settings.participationPoints;
+}
+/* Reset each class's "daily" points automatically when a new calendar day begins. */
+function checkDailyRollover(){
+  const today = todayISO();
+  ['6A','6B'].forEach(cls=>{
+    const c = state.classes[cls];
+    if(c.lastDailyDate !== today){
+      HOUSE_KEYS.forEach(h=> c.housePoints[h].daily = 0);
+      c.lastDailyDate = today;
+    }
+  });
+}
+
+let state = null; // populated asynchronously by initApp() below, once loaded from storage
+
+/* persist() is called very often (every point click, every edit). Saving to
+   local storage is instant and safe to do every time, but hammering the
+   shared cloud storage that many times in a row is what was triggering
+   "Internal server error" / rate-limit failures. So the cloud half is
+   debounced: it waits for a short pause in activity before actually
+   syncing, and batches multiple rapid changes into a single write. */
+let cloudSyncTimer = null;
+function persist(){
+  DataStore.saveLocal(state); // instant, always — never lost even if the network sync is delayed
+  if(cloudSyncTimer) clearTimeout(cloudSyncTimer);
+  cloudSyncTimer = setTimeout(()=>{ cloudSyncTimer = null; DataStore.saveCloud(state); }, 800);
+}
+/* Force an immediate sync attempt, bypassing the debounce — used by the
+   explicit "Save Data" button and right before the page closes. */
+function flushCloudSync(){
+  DataStore.saveLocal(state);
+  if(cloudSyncTimer){ clearTimeout(cloudSyncTimer); cloudSyncTimer = null; }
+  return DataStore.saveCloud(state);
+}
+window.addEventListener('beforeunload', ()=>{ if(cloudSyncTimer) flushCloudSync(); });
+
+/* ---------------------------------------------------------------------------
+   2. SOUND — synthesized with Web Audio API (no external/copyrighted files)
+--------------------------------------------------------------------------- */
+const SoundFX = (() => {
+  let ctx;
+  function getCtx(){ if(!ctx) ctx = new (window.AudioContext||window.webkitAudioContext)(); return ctx; }
+  function tone(freq, dur, type='sine', delay=0, gain=0.18){
+    if(!state || !state.settings.soundOn) return;
+    try{
+      const c = getCtx();
+      const osc = c.createOscillator();
+      const g = c.createGain();
+      osc.type = type; osc.frequency.value = freq;
+      g.gain.value = gain;
+      osc.connect(g); g.connect(c.destination);
+      const t0 = c.currentTime + delay;
+      osc.start(t0);
+      g.gain.setValueAtTime(gain, t0);
+      g.gain.exponentialRampToValueAtTime(0.001, t0+dur);
+      osc.stop(t0+dur+0.02);
+    }catch(e){/* audio unavailable */}
+  }
+  return {
+    addPoints(){ tone(523,.12,'triangle',0); tone(784,.16,'triangle',.1); tone(1046,.2,'triangle',.2); },
+    removePoints(){ tone(300,.25,'sawtooth',0,.12); tone(180,.3,'sawtooth',.15,.12); },
+    win(){ [523,659,784,1046,1318].forEach((f,i)=>tone(f,.3,'triangle',i*.15,.2)); },
+    up(){ tone(660,.12,'sine',0); tone(880,.14,'sine',.08); },
+    down(){ tone(440,.12,'sine',0); tone(300,.16,'sine',.08); },
+    click(){ tone(700,.06,'sine',0,.08); }
+  };
+})();
+
+/* ---------------------------------------------------------------------------
+   3. FLOATING BACKGROUND PARTICLES
+--------------------------------------------------------------------------- */
+function spawnParticle(){
+  if(!state || !state.settings.animationsOn) return;
+  const el = document.createElement('div');
+  el.className='particle';
+  const size = 2 + Math.random()*3;
+  el.style.width = el.style.height = size+'px';
+  el.style.left = Math.random()*100+'%';
+  el.style.animationDuration = (8+Math.random()*10)+'s';
+  document.getElementById('particles').appendChild(el);
+  setTimeout(()=>el.remove(), 19000);
+}
+setInterval(spawnParticle, 900);
+
+/* ---------------------------------------------------------------------------
+   4. TOASTS & MODAL
+--------------------------------------------------------------------------- */
+function toast(msg){
+  const t = document.createElement('div');
+  t.className='toast'; t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(()=>t.remove(), 2400);
+}
+const modalOverlay = document.getElementById('modalOverlay');
+const modalBox = document.getElementById('modalBox');
+function openModal(html){
+  modalBox.innerHTML = html;
+  modalOverlay.classList.add('show');
+}
+function closeModal(){ modalOverlay.classList.remove('show'); modalBox.innerHTML=''; }
+modalOverlay.addEventListener('click', e => { if(e.target===modalOverlay) closeModal(); });
+
+/* ---------------------------------------------------------------------------
+   5. NAVIGATION
+--------------------------------------------------------------------------- */
+const sideNav = document.getElementById('sideNav');
+const navOverlay = document.getElementById('navOverlay');
+function toggleNav(open){
+  const isOpen = open !== undefined ? open : !sideNav.classList.contains('open');
+  sideNav.classList.toggle('open', isOpen);
+  navOverlay.classList.toggle('show', isOpen);
+  document.getElementById('hamburgerBtn').setAttribute('aria-expanded', isOpen);
+}
+document.getElementById('hamburgerBtn').addEventListener('click', ()=>toggleNav());
+navOverlay.addEventListener('click', ()=>toggleNav(false));
+document.getElementById('brandHome').addEventListener('click', ()=>showView('home'));
+
+function showView(id){
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  const target = document.getElementById('view-'+id);
+  if(target) target.classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.toggle('active', n.dataset.view===id));
+  toggleNav(false);
+  renderAll();
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+document.querySelectorAll('.nav-item, [data-view]').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    if(btn.dataset.class){ state.currentClass = btn.dataset.class; persist(); }
+    if(btn.dataset.view) showView(btn.dataset.view);
+  });
+});
+
+/* ---------------------------------------------------------------------------
+   6. HELPERS
+--------------------------------------------------------------------------- */
+function classTotals(cls, field){ // field: 'total' or 'weekly'. Classes are fully independent — never summed.
+  const totals = {};
+  HOUSE_KEYS.forEach(h=>{
+    totals[h] = state.classes[cls].housePoints[h][field];
+  });
+  return totals;
+}
+function sortedHouseEntries(totalsObj){
+  return Object.entries(totalsObj).sort((a,b)=>b[1]-a[1]);
+}
+function todayISO(){ return new Date().toISOString().slice(0,10); }
+function fmtDate(iso){
+  const d = new Date(iso);
+  return d.toLocaleDateString(undefined,{month:'long', day:'numeric'});
+}
+function allStudents(){
+  return [
+    ...state.classes['6A'].students.map(s=>({...s, cls:'6A'})),
+    ...state.classes['6B'].students.map(s=>({...s, cls:'6B'}))
+  ];
+}
+function uid(){ return 'id'+Date.now()+Math.floor(Math.random()*10000); }
+
+/* ---------------------------------------------------------------------------
+   7. RENDER: HOME
+--------------------------------------------------------------------------- */
+function renderHomeHouses(){
+  ['6A','6B'].forEach(cls=>{
+    const totals = classTotals(cls, 'total');
+    const grid = document.getElementById('homeHouseGrid'+cls);
+    if(!grid) return;
+    grid.innerHTML = HOUSE_KEYS.map(h=>{
+      const meta = HOUSES[h];
+      return `<div class="house-card ${meta.cls}">
+        <div class="h-icon">${meta.icon}</div>
+        <div class="h-name">${meta.name}</div>
+        <div class="h-points">${totals[h]} pts</div>
+      </div>`;
+    }).join('');
+  });
+}
+function renderLeaderboardInto(containerId, totalsObj){
+  const entries = sortedHouseEntries(totalsObj);
+  const el = document.getElementById(containerId);
+  el.innerHTML = entries.map(([h,pts], i)=>{
+    const meta = HOUSES[h];
+    return `<div class="lb-row ${i===0?'rank-1':''}">
+      <div class="lb-medal">${MEDALS[i]}</div>
+      <div class="lb-info">
+        <div class="lb-name">${meta.icon} ${meta.name}</div>
+        <div>Position: ${i+1}${['st','nd','rd'][i]||'th'} place</div>
+      </div>
+      <div class="lb-points">${pts} pts</div>
+    </div>`;
+  }).join('');
+}
+
+/* ---------------------------------------------------------------------------
+   8. RENDER: CLASSROOM (students + drag & drop houses)
+--------------------------------------------------------------------------- */
+function renderClassroom(){
+  const cls = state.currentClass;
+  document.getElementById('classroomTitle').textContent = `📚 Class ${cls}`;
+  document.getElementById('activeClassBadge').textContent = `Class: ${cls}`;
+  const search = (document.getElementById('studentSearch').value||'').toLowerCase();
+  const students = state.classes[cls].students.filter(s=>s.name.toLowerCase().includes(search));
+
+  const cols = document.getElementById('houseColumns');
+  let html = '';
+  HOUSE_KEYS.forEach(h=>{
+    const meta = HOUSES[h];
+    const list = students.filter(s=>s.house===h);
+    html += `<div class="house-col ${meta.cls}" data-house="${h}">
+        <h3>${meta.icon} ${meta.name} <span>${list.length}</span></h3>
+        ${renderChips(list)}
+      </div>`;
+  });
+  cols.innerHTML = html;
+
+  cols.querySelectorAll('.house-col').forEach(col=>{
+    col.addEventListener('dragover', e=>{ e.preventDefault(); col.classList.add('dragover'); });
+    col.addEventListener('dragleave', ()=>col.classList.remove('dragover'));
+    col.addEventListener('drop', e=>{
+      e.preventDefault(); col.classList.remove('dragover');
+      const sid = e.dataTransfer.getData('text/plain');
+      moveStudent(sid, col.dataset.house);
+    });
+  });
+  cols.querySelectorAll('.student-chip').forEach(chip=>{
+    chip.addEventListener('dragstart', e=>{
+      e.dataTransfer.setData('text/plain', chip.dataset.id);
+    });
+  });
+  cols.querySelectorAll('[data-action="addpts"]').forEach(b=>b.addEventListener('click', ()=>giveStudentPoint(b.dataset.id, 1)));
+  cols.querySelectorAll('[data-action="removepts"]').forEach(b=>b.addEventListener('click', ()=>giveStudentPoint(b.dataset.id, -1)));
+  cols.querySelectorAll('[data-action="edit"]').forEach(b=>b.addEventListener('click', ()=>editStudentModal(b.dataset.id)));
+  cols.querySelectorAll('[data-action="remove"]').forEach(b=>b.addEventListener('click', ()=>removeStudentConfirm(b.dataset.id)));
+}
+function renderChips(list){
+  return list.map(s=>`<div class="student-chip" draggable="true" data-id="${s.id}">
+      <span>${s.name}</span>
+      <span class="chip-actions">
+        <button data-action="addpts" data-id="${s.id}" title="Give points">➕</button>
+        <button data-action="removepts" data-id="${s.id}" title="Take away points">➖</button>
+        <button data-action="edit" data-id="${s.id}" title="Edit">✏️</button>
+        <button data-action="remove" data-id="${s.id}" title="Remove">🗑️</button>
+      </span>
+    </div>`).join('') || `<p style="opacity:.7;font-size:.85rem;">No students here.</p>`;
+}
+
+document.getElementById('studentSearch').addEventListener('input', renderClassroom);
+
+document.getElementById('addStudentBtn').addEventListener('click', ()=>{
+  openModal(`<h3>➕ Add Student</h3>
+    <label>Name</label><input type="text" id="mName" placeholder="Student name">
+    <label>House</label>
+    <select id="mHouse">
+      ${HOUSE_KEYS.map(h=>`<option value="${h}">${HOUSES[h].icon} ${HOUSES[h].name}</option>`).join('')}
+      <option value="random">🎲 Randomly assign a house</option>
+    </select>
+    <div class="modal-actions">
+      <button class="btn" id="mCancel">Cancel</button>
+      <button class="btn btn-gold" id="mSave">✨ Add</button>
+    </div>`);
+  document.getElementById('mCancel').onclick = closeModal;
+  document.getElementById('mSave').onclick = ()=>{
+    const name = document.getElementById('mName').value.trim();
+    if(!name){ toast('Please enter a name.'); return; }
+    const choice = document.getElementById('mHouse').value;
+    const house = choice==='random' ? HOUSE_KEYS[Math.floor(Math.random()*HOUSE_KEYS.length)] : choice;
+    state.classes[state.currentClass].students.push({id:uid(), name, house});
+    persist(); closeModal(); toast(`${name} added to ${HOUSES[house].name}!`);
+    renderAll();
+  };
+});
+
+/* Bulk add — paste a whole class list at once, one name per line, then place
+   them all into one house, split randomly, or place each one individually
+   right after adding (via drag-and-drop or the ✏️ edit button). */
+document.getElementById('bulkAddBtn').addEventListener('click', ()=>{
+  const cls = state.currentClass;
+  openModal(`<h3>📋 Add Multiple Students — Class ${cls}</h3>
+    <label>Paste one student name per line</label>
+    <textarea id="mBulkNames" rows="8" placeholder="Hermione Granger
+Harry Potter
+Ron Weasley
+..."></textarea>
+    <label>House for all of them</label>
+    <select id="mBulkHouse">
+      ${HOUSE_KEYS.map(h=>`<option value="${h}">${HOUSES[h].icon} ${HOUSES[h].name} (all of them)</option>`).join('')}
+      <option value="random">🎲 Randomly split between the four houses</option>
+    </select>
+    <p class="hint-text" style="margin:6px 0 0;">Tip: after adding, you can drag any student card into a different house, or use ✏️ to change one at a time.</p>
+    <div class="modal-actions">
+      <button class="btn" id="mCancel">Cancel</button>
+      <button class="btn btn-gold" id="mSave">✨ Add Students</button>
+    </div>`);
+  document.getElementById('mCancel').onclick = closeModal;
+  document.getElementById('mSave').onclick = ()=>{
+    const raw = document.getElementById('mBulkNames').value;
+    const names = raw.split('\n').map(n=>n.trim()).filter(Boolean);
+    if(names.length===0){ toast('Paste at least one student name.'); return; }
+    const houseChoice = document.getElementById('mBulkHouse').value;
+    names.forEach(name=>{
+      const house = houseChoice==='random' ? HOUSE_KEYS[Math.floor(Math.random()*HOUSE_KEYS.length)] : houseChoice;
+      state.classes[cls].students.push({id:uid(), name, house});
+    });
+    persist(); closeModal(); toast(`${names.length} student${names.length>1?'s':''} added to Class ${cls}!`);
+    renderAll();
+  };
+});
+
+/* When a student switches house, any individual points they've personally
+   earned (tracked in state.studentPoints) move with them: subtracted from
+   their old house's term total, added to their new house's term total. */
+function getStudentPointsTotal(studentId){
+  return (state.studentPoints||[]).reduce((sum,sp)=> sp.studentId===studentId ? sum+sp.amount : sum, 0);
+}
+function transferStudentPoints(cls, student, oldHouse, newHouse){
+  if(!oldHouse || !newHouse || oldHouse===newHouse) return;
+  const amt = getStudentPointsTotal(student.id);
+  if(amt === 0) return;
+  state.classes[cls].housePoints[oldHouse].total -= amt;
+  state.classes[cls].housePoints[newHouse].total += amt;
+  state.pointHistory.unshift({ id:uid(), date:todayISO(), cls, house:oldHouse, amount:-amt, reason:`${student.name} transferred to ${HOUSES[newHouse].name}`, teacher:state.settings.teacherName });
+  state.pointHistory.unshift({ id:uid(), date:todayISO(), cls, house:newHouse, amount:amt, reason:`${student.name} transferred from ${HOUSES[oldHouse].name}`, teacher:state.settings.teacherName });
+  toast(`${student.name}'s ${Math.abs(amt)} point${Math.abs(amt)===1?'':'s'} moved to ${HOUSES[newHouse].name}!`);
+}
+
+function editStudentModal(id){
+  const cls = state.currentClass;
+  const s = state.classes[cls].students.find(x=>x.id===id);
+  if(!s) return;
+  openModal(`<h3>✏️ Edit Student</h3>
+    <label>Name</label><input type="text" id="mName" value="${s.name}">
+    <label>House</label>
+    <select id="mHouse">
+      ${HOUSE_KEYS.map(h=>`<option value="${h}" ${s.house===h?'selected':''}>${HOUSES[h].icon} ${HOUSES[h].name}</option>`).join('')}
+    </select>
+    <div class="modal-actions">
+      <button class="btn" id="mCancel">Cancel</button>
+      <button class="btn btn-gold" id="mSave">💾 Save</button>
+    </div>`);
+  document.getElementById('mCancel').onclick = closeModal;
+  document.getElementById('mSave').onclick = ()=>{
+    s.name = document.getElementById('mName').value.trim() || s.name;
+    const newHouse = document.getElementById('mHouse').value;
+    if(newHouse !== s.house){
+      transferStudentPoints(cls, s, s.house, newHouse);
+      s.house = newHouse;
+    }
+    persist(); closeModal(); renderAll();
+  };
+}
+function removeStudentConfirm(id){
+  const cls = state.currentClass;
+  const s = state.classes[cls].students.find(x=>x.id===id);
+  if(!s) return;
+  openModal(`<h3>🗑️ Remove Student</h3>
+    <p>Are you sure you want to remove <strong>${s.name}</strong>? This cannot be undone.</p>
+    <div class="modal-actions">
+      <button class="btn" id="mCancel">Cancel</button>
+      <button class="btn btn-danger" id="mConfirm">Remove</button>
+    </div>`);
+  document.getElementById('mCancel').onclick = closeModal;
+  document.getElementById('mConfirm').onclick = ()=>{
+    state.classes[cls].students = state.classes[cls].students.filter(x=>x.id!==id);
+    persist(); closeModal(); toast('Student removed.'); renderAll();
+  };
+}
+function moveStudent(id, house){
+  for(const cls of ['6A','6B']){
+    const s = state.classes[cls].students.find(x=>x.id===id);
+    if(s){
+      if(house !== s.house){
+        transferStudentPoints(cls, s, s.house, house);
+        s.house = house;
+      }
+      persist(); renderAll(); return;
+    }
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   10. RENDER: HOUSE POINTS
+--------------------------------------------------------------------------- */
+function renderPointsView(){
+  const cls = state.currentClass;
+  document.getElementById('pointsClassLabel').textContent = cls;
+  const grid = document.getElementById('pointsHouseGrid');
+  grid.innerHTML = HOUSE_KEYS.map(h=>{
+    const meta = HOUSES[h];
+    const hp = state.classes[cls].housePoints[h];
+    return `<div class="house-card ${meta.cls}">
+      <div class="h-icon">${meta.icon}</div>
+      <div class="h-name">${meta.name}</div>
+      <div class="h-points" id="pts-${h}">🏆 ${hp.total} Points</div>
+      <div class="points-breakdown">🌞 Today: ${hp.daily} &nbsp; 🗓️ Week: ${hp.weekly} &nbsp; 🏆 Term: ${hp.total}</div>
+      <div class="house-actions">
+        <button class="btn btn-gold btn-small" data-act="add" data-house="${h}">➕ Add</button>
+        <button class="btn btn-danger btn-small" data-act="remove" data-house="${h}">➖ Remove</button>
+      </div>
+    </div>`;
+  }).join('');
+  grid.querySelectorAll('[data-act]').forEach(btn=>{
+    btn.addEventListener('click', ()=>pointsModal(btn.dataset.house, btn.dataset.act==='add'?1:-1));
+  });
+}
+function pointsModal(house, sign){
+  const meta = HOUSES[house];
+  const cls = state.currentClass;
+  openModal(`<h3>${sign>0?'➕ Add':'➖ Remove'} Points — ${meta.icon} ${meta.name} (Class ${cls})</h3>
+    <label>How many points?</label><input type="number" id="mAmount" min="1" value="5">
+    <label>Reason for this change</label><input type="text" id="mReason" placeholder="e.g. Excellent teamwork">
+    <div class="modal-actions">
+      <button class="btn" id="mCancel">Cancel</button>
+      <button class="btn ${sign>0?'btn-gold':'btn-danger'}" id="mSave">Confirm</button>
+    </div>`);
+  document.getElementById('mCancel').onclick = closeModal;
+  document.getElementById('mSave').onclick = ()=>{
+    const amt = Math.abs(parseInt(document.getElementById('mAmount').value,10) || 0);
+    const reason = document.getElementById('mReason').value.trim() || (sign>0?'Good behavior':'Rule broken');
+    if(amt===0){ toast('Enter a valid number of points.'); return; }
+    addPoints(cls, house, amt*sign, reason);
+    closeModal();
+  };
+}
+
+/* Give or take away one point at a time from a specific student — no modal,
+   so the teacher can just tap repeatedly during class. The point also flows
+   into that student's house totals (daily/weekly/term) and into the
+   individual student leaderboard tally. */
+function giveStudentPoint(studentId, sign){
+  const cls = state.currentClass;
+  const s = state.classes[cls].students.find(x=>x.id===studentId);
+  if(!s) return;
+  const reason = sign>0 ? `Point to ${s.name}` : `Point taken from ${s.name}`;
+  addPoints(cls, s.house, sign, reason);
+  if(!state.studentPoints) state.studentPoints=[];
+  state.studentPoints.push({studentId:s.id, amount:sign, date:todayISO()});
+  persist();
+}
+function addPoints(cls, house, amount, reason){
+  const hp = state.classes[cls].housePoints[house];
+  hp.daily += amount; hp.weekly += amount; hp.total += amount;
+  state.pointHistory.unshift({ id:uid(), date:todayISO(), cls, house, amount, reason, teacher:state.settings.teacherName });
+  persist();
+  amount>0 ? SoundFX.addPoints() : SoundFX.removePoints();
+  toast(`${amount>0?'+':''}${amount} points for ${HOUSES[house].name}: ${reason}`);
+  renderAll();
+  const bump = document.getElementById('pts-'+house);
+  if(bump){ bump.classList.add('bump'); setTimeout(()=>bump.classList.remove('bump'),500); }
+}
+
+/* ---------------------------------------------------------------------------
+   12. RENDER: LEADERBOARDS  (daily / weekly / term — always per class, never mixed)
+--------------------------------------------------------------------------- */
+let leaderboardPeriod = 'term';
+const PERIOD_LABEL = { daily:'📅 Daily Leaderboard', weekly:'🗓️ Weekly Leaderboard', term:'🏆 Term Leaderboard' };
+document.querySelectorAll('#lbTabs [data-period]').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    leaderboardPeriod = btn.dataset.period;
+    SoundFX.click();
+    renderFullLeaderboards();
+  });
+});
+function renderFullLeaderboards(){
+  document.querySelectorAll('#lbTabs [data-period]').forEach(btn=>{
+    btn.classList.toggle('tab-active', btn.dataset.period===leaderboardPeriod);
+  });
+  document.getElementById('lbPeriodHeading').textContent = PERIOD_LABEL[leaderboardPeriod];
+  renderLeaderboardInto('fullLeaderboard6A', classTotals('6A', leaderboardPeriod));
+  renderLeaderboardInto('fullLeaderboard6B', classTotals('6B', leaderboardPeriod));
+  const wrap = document.getElementById('studentLeaderboardWrap');
+  if(!state.settings.studentLeaderboardVisible){
+    wrap.innerHTML = `<p class="privacy-hidden-msg">This leaderboard is currently hidden by the teacher's privacy settings.</p>`;
+    return;
+  }
+  // Individual student points are tallied from state.studentPoints, which is
+  // populated whenever a teacher wants to attribute a house-points award to a
+  // specific student (see addPoints / pointsModal "Student" field).
+  const tally = {};
+  allStudents().forEach(s=> tally[s.id] = { name:s.name, cls:s.cls, pts:0 });
+  (state.studentPoints||[]).forEach(sp=>{ if(tally[sp.studentId]) tally[sp.studentId].pts += sp.amount; });
+  const ranked = Object.values(tally).filter(s=>s.pts>0).sort((a,b)=>b.pts-a.pts).slice(0,10);
+  const ol = document.getElementById('studentLeaderboard');
+  ol.innerHTML = ranked.map((s,i)=>`<li><span>${i+1}. ${s.name} (${s.cls})</span><span>${s.pts} pts</span></li>`).join('')
+    || `<p style="opacity:.7">No individual student points recorded yet — optionally credit a student when awarding house points.</p>`;
+}
+
+/* ---------------------------------------------------------------------------
+   13. HOUSE CUP CEREMONIES — daily, weekly, and end-of-term reveals
+--------------------------------------------------------------------------- */
+const ceremonyAudioSlots = {};
+document.querySelectorAll('.ceremony-audio-select input[type=file]').forEach(inp=>{
+  inp.addEventListener('change', ()=>{
+    if(inp.files[0]) ceremonyAudioSlots[inp.dataset.slot] = URL.createObjectURL(inp.files[0]);
+  });
+});
+function playCeremonySlot(n){
+  const url = ceremonyAudioSlots[n];
+  const audio = document.getElementById('ceremonyAudio');
+  if(url){ audio.src = url; audio.play().catch(()=>{}); }
+}
+
+const CEREMONY_CONFIG = {
+  weekly: { field:'weekly', stageId:'ceremonyStageWeekly', noun:"THIS WEEK'S", grand:false },
+  term:   { field:'total',  stageId:'ceremonyStageTerm',   noun:"THE FINAL TERM", grand:true }
+};
+function runCeremony(period){
+  const cfg = CEREMONY_CONFIG[period];
+  const cls = state.currentClass;
+  const stage = document.getElementById(cfg.stageId);
+  const totals = classTotals(cls, cfg.field);
+  const ranked = sortedHouseEntries(totals);
+  if(ranked.every(([,v])=>v===0)){ toast(`No points recorded yet for this period in Class ${cls}!`); return; }
+  const order = [...ranked].reverse(); // 4th -> 1st
+  stage.innerHTML = '';
+  let count = 3;
+  const countDiv = document.createElement('div');
+  countDiv.className='ceremony-countdown';
+  stage.appendChild(countDiv);
+  countDiv.textContent = count;
+  SoundFX.click();
+  const countInt = setInterval(()=>{
+    count--;
+    if(count>0){ countDiv.textContent=count; SoundFX.click(); }
+    else{
+      clearInterval(countInt);
+      countDiv.textContent = '✨ THE RESULTS ARE HERE! ✨';
+      SoundFX.win();
+      setTimeout(revealNext, 1000);
+    }
+  }, 800);
+  let i = 0;
+  function revealNext(){
+    if(i>=order.length){ if(cfg.grand) launchConfetti(); return; }
+    const [house] = order[i];
+    const rankFromTop = ranked.findIndex(([h])=>h===house);
+    const isWinner = rankFromTop===0;
+    playCeremonySlot(rankFromTop+1);
+    const div = document.createElement('div');
+    div.className='ceremony-house-reveal';
+    div.innerHTML = `<div class="ceremony-place">${MEDALS[rankFromTop]} ${['1st Place','2nd Place','3rd Place','4th Place'][rankFromTop]}</div>
+      ${HOUSES[house].icon} ${HOUSES[house].name}`;
+    stage.appendChild(div);
+    if(isWinner){
+      const win = document.createElement('div');
+      win.className='ceremony-winner';
+      win.innerHTML = cfg.grand
+        ? `🏆🏁 CLASS ${cls}'S END-OF-TERM HOUSE CUP CHAMPIONS! 🏁🏆`
+        : `🏆 CLASS ${cls}'S ${cfg.noun} CHAMPIONS! 🏆`;
+      stage.appendChild(win);
+      SoundFX.win();
+      launchConfetti();
+      if(cfg.grand){
+        const hint = document.createElement('p');
+        hint.style.marginTop='8px';
+        hint.innerHTML = `See the <strong>🏆 Final Rewards</strong> page for what Class ${cls} has earned!`;
+        stage.appendChild(hint);
+      }
+    } else { SoundFX.up(); }
+    i++;
+    setTimeout(revealNext, 1800);
+  }
+}
+document.getElementById('revealCeremonyBtn').addEventListener('click', ()=>runCeremony('weekly'));
+document.getElementById('revealTermBtn').addEventListener('click', ()=>runCeremony('term'));
+
+document.getElementById('resetWeeklyBtn').addEventListener('click', ()=>{
+  const cls = state.currentClass;
+  openModal(`<h3>🔄 Reset Weekly Points — Class ${cls}</h3>
+    <p>This clears Class ${cls}'s houses' <strong>weekly</strong> points (used for the weekly ceremony) but keeps their full term totals. Class ${cls==='6A'?'6B':'6A'} is not affected. Continue?</p>
+    <div class="modal-actions"><button class="btn" id="mCancel">Cancel</button><button class="btn btn-danger" id="mConfirm">Reset Weekly</button></div>`);
+  document.getElementById('mCancel').onclick = closeModal;
+  document.getElementById('mConfirm').onclick = ()=>{
+    HOUSE_KEYS.forEach(h=> state.classes[cls].housePoints[h].weekly = 0);
+    persist(); closeModal(); toast(`Weekly points reset for Class ${cls}!`); renderAll();
+  };
+});
+
+/* Simple confetti/fireworks via canvas */
+function launchConfetti(){
+  if(!state.settings.animationsOn) return;
+  const canvas = document.getElementById('fxCanvas');
+  canvas.width = window.innerWidth; canvas.height = window.innerHeight;
+  canvas.classList.add('show');
+  const ctx = canvas.getContext('2d');
+  const colors = ['#d3a625','#740001','#1a472a','#0e1a40','#ecb939','#ffffff'];
+  const pieces = Array.from({length:140}, ()=>({
+    x: Math.random()*canvas.width, y: -20-Math.random()*canvas.height*0.5,
+    vx:(Math.random()-0.5)*3, vy:2+Math.random()*4,
+    size:4+Math.random()*5, color:colors[Math.floor(Math.random()*colors.length)],
+    rot:Math.random()*360, vr:(Math.random()-0.5)*10
+  }));
+  let frame = 0;
+  function loop(){
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    pieces.forEach(p=>{
+      p.x+=p.vx; p.y+=p.vy; p.rot+=p.vr;
+      ctx.save(); ctx.translate(p.x,p.y); ctx.rotate(p.rot*Math.PI/180);
+      ctx.fillStyle = p.color;
+      ctx.fillRect(-p.size/2,-p.size/2,p.size,p.size);
+      ctx.restore();
+    });
+    frame++;
+    if(frame<220) requestAnimationFrame(loop);
+    else { canvas.classList.remove('show'); ctx.clearRect(0,0,canvas.width,canvas.height); }
+  }
+  loop();
+}
+
+/* ---------------------------------------------------------------------------
+   16. REWARDS
+--------------------------------------------------------------------------- */
+const REWARD_TITLES = { first:'🥇 First Place — House Cup Champions', second:'🥈 Second Place', third:'🥉 Third Place', fourth:'🏅 Fourth Place' };
+function renderRewards(){
+  const grid = document.getElementById('rewardsGrid');
+  grid.innerHTML = Object.keys(REWARD_TITLES).map(k=>`
+    <div class="reward-card parchment-card" data-k="${k}">
+      <h3>${REWARD_TITLES[k]}</h3>
+      <p class="reward-text">${state.settings.rewards[k]}</p>
+      <textarea>${state.settings.rewards[k]}</textarea>
+    </div>`).join('');
+}
+document.getElementById('editRewardsBtn').addEventListener('click', function(){
+  const editing = this.dataset.editing === '1';
+  document.querySelectorAll('.reward-card').forEach(c=>c.classList.toggle('editing', !editing));
+  this.textContent = editing ? '✏️ Edit Rewards' : '💾 Save Rewards';
+  this.dataset.editing = editing ? '0':'1';
+  if(editing){
+    document.querySelectorAll('.reward-card').forEach(c=>{
+      const k = c.dataset.k;
+      state.settings.rewards[k] = c.querySelector('textarea').value;
+    });
+    persist(); toast('Rewards updated!'); renderRewards();
+  }
+});
+
+/* ---------------------------------------------------------------------------
+   17. SETTINGS
+--------------------------------------------------------------------------- */
+function renderSettings(){
+  document.getElementById('studentLbToggle').checked = state.settings.studentLeaderboardVisible;
+  document.getElementById('animToggleSetting').checked = state.settings.animationsOn;
+  document.getElementById('soundToggleSetting').checked = state.settings.soundOn;
+}
+document.getElementById('studentLbToggle').addEventListener('change', e=>{ state.settings.studentLeaderboardVisible = e.target.checked; persist(); });
+document.getElementById('animToggleSetting').addEventListener('change', e=>{ state.settings.animationsOn = e.target.checked; applyAnimToggle(); persist(); });
+document.getElementById('soundToggleSetting').addEventListener('change', e=>{ state.settings.soundOn = e.target.checked; applySoundToggle(); persist(); });
+
+document.getElementById('saveDataBtn').addEventListener('click', ()=>{ flushCloudSync(); toast('💾 Data saved!'); });
+document.getElementById('exportDataBtn').addEventListener('click', ()=>{
+  const blob = new Blob([JSON.stringify(state,null,2)], {type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `wizarding-house-cup-${todayISO()}.json`;
+  a.click();
+});
+document.getElementById('importDataBtn').addEventListener('click', ()=>{
+  document.getElementById('importDataInput').click();
+});
+document.getElementById('importDataInput').addEventListener('change', (e)=>{
+  const file = e.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = (ev)=>{
+    let parsed;
+    try{ parsed = JSON.parse(ev.target.result); }
+    catch(err){ toast('That file doesn\'t look like a valid House Cup export.'); e.target.value=''; return; }
+    if(!parsed || !parsed.classes || !parsed.classes['6A'] || !parsed.classes['6B']){
+      toast('That file doesn\'t look like a valid House Cup export.'); e.target.value=''; return;
+    }
+    openModal(`<h3>📂 Import Data</h3>
+      <p>This will replace everything currently loaded — all students, points, and history — with the contents of <strong>${file.name}</strong>. Continue?</p>
+      <div class="modal-actions"><button class="btn" id="mCancel">Cancel</button><button class="btn btn-gold" id="mConfirm">Import</button></div>`);
+    document.getElementById('mCancel').onclick = ()=>{ closeModal(); e.target.value=''; };
+    document.getElementById('mConfirm').onclick = ()=>{
+      state = parsed;
+      migrateState();
+      persist();
+      closeModal(); e.target.value='';
+      toast('📂 Data imported successfully!');
+      renderAll();
+    };
+  };
+  reader.readAsText(file);
+});
+document.getElementById('exportExcelBtn').addEventListener('click', ()=>{
+  if(typeof XLSX === 'undefined'){ toast('The Excel export library is still loading — please try again in a moment.'); return; }
+  const wb = XLSX.utils.book_new();
+
+  // Sheet 1: Students
+  const studentsRows = allStudents().map(s=>({
+    Name: s.name, Class: s.cls, House: HOUSES[s.house] ? HOUSES[s.house].name : ''
+  }));
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(studentsRows), 'Students');
+
+  // Sheet 2: Current Points (daily / weekly / term, per class + house)
+  const pointsRows = [];
+  ['6A','6B'].forEach(cls=>{
+    HOUSE_KEYS.forEach(h=>{
+      const hp = state.classes[cls].housePoints[h];
+      pointsRows.push({ Class:cls, House:HOUSES[h].name, 'Daily Points':hp.daily, 'Weekly Points':hp.weekly, 'Term Points':hp.total });
+    });
+  });
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(pointsRows), 'Current Points');
+
+  // Sheet 3: Full point history log
+  const historyRows = state.pointHistory.map(h=>({
+    Date:h.date, Class:h.cls, House:HOUSES[h.house].name, Points:h.amount, Reason:h.reason, Teacher:h.teacher
+  }));
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(historyRows), 'Point History');
+
+  XLSX.writeFile(wb, `wizarding-house-cup-${todayISO()}.xlsx`);
+  toast('📗 Excel file downloaded!');
+});
+document.getElementById('resetDataBtn').addEventListener('click', ()=>{
+  openModal(`<h3>⚠️ Reset All Data</h3>
+    <p>This will permanently delete all students, points, and history for both classes. This cannot be undone.</p>
+    <div class="modal-actions"><button class="btn" id="mCancel">Cancel</button><button class="btn btn-danger" id="mConfirm">Yes, Reset Everything</button></div>`);
+  document.getElementById('mCancel').onclick = closeModal;
+  document.getElementById('mConfirm').onclick = ()=>{
+    state = defaultState(); persist(); closeModal(); toast('All data has been reset.'); renderAll();
+  };
+});
+
+/* ---------------------------------------------------------------------------
+   19. TOP CONTROLS: sound / music / animation toggles
+--------------------------------------------------------------------------- */
+function applySoundToggle(){
+  document.getElementById('soundToggleBtn').textContent = state.settings.soundOn ? '🔊' : '🔇';
+  document.getElementById('soundToggleBtn').classList.toggle('off', !state.settings.soundOn);
+}
+function applyAnimToggle(){
+  document.body.classList.toggle('no-anim', !state.settings.animationsOn);
+  document.getElementById('animToggleBtn').classList.toggle('off', !state.settings.animationsOn);
+}
+document.getElementById('soundToggleBtn').addEventListener('click', ()=>{
+  state.settings.soundOn = !state.settings.soundOn; applySoundToggle(); persist();
+  if(state.settings.soundOn) SoundFX.click();
+});
+document.getElementById('animToggleBtn').addEventListener('click', ()=>{
+  state.settings.animationsOn = !state.settings.animationsOn; applyAnimToggle(); persist();
+});
+const bgMusic = document.getElementById('bgMusic');
+let musicPlaying = false;
+document.getElementById('musicToggleBtn').addEventListener('click', ()=>{
+  if(!bgMusic.src){ toast('No background music loaded. Upload a track in the Ceremonies page first, or add one to bgMusic in script.js.'); return; }
+  if(musicPlaying){ bgMusic.pause(); } else { bgMusic.play().catch(()=>{}); }
+  musicPlaying = !musicPlaying;
+  document.getElementById('musicToggleBtn').classList.toggle('off', !musicPlaying);
+});
+
+/* ---------------------------------------------------------------------------
+   20. WELCOME SCREEN
+--------------------------------------------------------------------------- */
+document.getElementById('enterSiteBtn').addEventListener('click', ()=>{
+  document.getElementById('welcomeScreen').classList.add('hidden');
+  SoundFX.click();
+});
+
+/* ---------------------------------------------------------------------------
+   21. MASTER RENDER
+--------------------------------------------------------------------------- */
+function renderAll(){
+  if(!state) return; // still loading from storage — renderAll() re-runs once ready
+  checkDailyRollover();
+  document.getElementById('activeClassBadge').textContent = `Class: ${state.currentClass}`;
+  const ceremonyLabel = document.getElementById('ceremonyClassLabel');
+  if(ceremonyLabel) ceremonyLabel.textContent = state.currentClass;
+  renderHomeHouses();
+  renderLeaderboardInto('homeLeaderboard6A', classTotals('6A','total'));
+  renderLeaderboardInto('homeLeaderboard6B', classTotals('6B','total'));
+  renderClassroom();
+  renderPointsView();
+  renderFullLeaderboards();
+  renderRewards();
+  renderSettings();
+}
+
+/* ---------------------------------------------------------------------------
+   22. INIT
+--------------------------------------------------------------------------- */
+async function initApp(){
+  const statusEl = document.getElementById('syncStatus');
+  const storageHintEl = document.getElementById('storageHint');
+  state = await DataStore.load();
+  const usingCloud = DataStore.hasCloud();
+  const localWorks = DataStore.localStorageWorks();
+  if(!state){
+    state = defaultState();
+    if(statusEl) statusEl.textContent = usingCloud
+      ? '✨ Starting a brand-new House Cup — anyone with this link will now see it, no sign-in needed!'
+      : localWorks
+        ? '🔒 Starting a brand-new House Cup, saved to this device only.'
+        : '⚠️ This browser won\'t save data for local files — use Export/Import in Teacher Settings to keep your progress!';
+  } else if(statusEl){
+    statusEl.textContent = usingCloud
+      ? '✨ Your saved House Cup data has been loaded — anyone with this link shares it, no sign-in needed!'
+      : localWorks
+        ? '🔒 Your saved data has been loaded from this device only.'
+        : '⚠️ This browser won\'t save data for local files — use Export/Import in Teacher Settings to keep your progress!';
+  }
+  if(storageHintEl && !usingCloud && !localWorks){
+    storageHintEl.innerHTML = '⚠️ <strong>This browser is not saving data between visits for this local file.</strong> ' +
+      'This is a common browser restriction for files opened by double-clicking (the file:// address). ' +
+      'Use <strong>📊 Export Data</strong> before closing the tab, and <strong>📂 Import Data</strong> next time you reopen it, to keep your progress. ' +
+      'Running the file through a simple local server (see the setup guide) usually fixes this permanently.';
+  }
+  migrateState();
+  applySoundToggle();
+  applyAnimToggle();
+  renderAll();
+  showView('home');
+}
+initApp();
+
+</script>
+</body>
+</html>
