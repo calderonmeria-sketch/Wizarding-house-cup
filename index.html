@@ -126,6 +126,7 @@ a,button{font-family:inherit;}
 .welcome-text{color:var(--text-dark); line-height:1.5; font-size:1.05rem;}
 .welcome-houses{font-size:2rem; margin:16px 0; letter-spacing:14px;}
 .sync-status{font-size:.85rem; color:#5b3d17; opacity:.85; min-height:1.2em; margin-bottom:14px;}
+.sync-error{font-size:.78rem; color:#8a1f1f; font-weight:700; margin:-8px 0 14px; word-break:break-word;}
 
 /* ---------------- PARCHMENT SURFACES ---------------- */
 .parchment, .parchment-card, .parchment-lite{
@@ -408,6 +409,7 @@ main{max-width:1180px; margin:0 auto; padding:26px 18px 80px;}
       <span>🦁</span><span>🐍</span><span>🦅</span><span>🦡</span>
     </div>
     <p id="syncStatus" class="sync-status">🔮 Summoning your saved data...</p>
+    <p id="syncError" class="sync-error"></p>
     <button class="btn btn-gold btn-large" id="enterSiteBtn">✨ Enter the Great Hall ✨</button>
   </div>
 </div>
@@ -659,6 +661,7 @@ const DataStore = {
   /* Which backend actually ended up handling the last load/save — used for
      the honest status message shown to the teacher. */
   activeBackend: 'local',
+  lastError: null, // human-readable detail of the last failure, shown right in the UI (no dev tools needed)
   /* Some browsers (notably Chrome, in some configurations) refuse to persist
      localStorage for pages opened via file:// — writes silently vanish on
      reload even though setItem() doesn't throw. This does a real
@@ -721,6 +724,7 @@ const DataStore = {
           return this.loadLocal(); // no row yet — fresh start, but Supabase is working
         }catch(e){
           if(attempt===0){ await new Promise(r=>setTimeout(r, 500)); continue; }
+          this.lastError = 'Supabase read failed: ' + (e && e.message ? e.message : String(e));
           console.warn('Supabase storage is unavailable right now — falling back.', e);
           this._supabaseDisabled = true;
         }
@@ -740,6 +744,7 @@ const DataStore = {
           break;
         }catch(e){
           if(attempt===0){ await new Promise(r=>setTimeout(r, 500)); continue; }
+          this.lastError = 'Shared storage failed: ' + (e && e.message ? e.message : String(e));
           console.warn('Shared cloud storage is unavailable right now — using this device\'s local storage instead.', e);
           this._cloudDisabled = true;
         }
@@ -764,6 +769,7 @@ const DataStore = {
           return true;
         }catch(e){
           if(attempt===0){ await new Promise(r=>setTimeout(r, 600)); continue; }
+          this.lastError = 'Supabase write failed: ' + (e && e.message ? e.message : String(e));
           console.warn('Supabase write failed — saved locally only from now on.', e);
           this._supabaseDisabled = true;
         }
@@ -777,6 +783,7 @@ const DataStore = {
           return true;
         }catch(e){
           if(attempt===0){ await new Promise(r=>setTimeout(r, 600)); continue; }
+          this.lastError = 'Shared storage write failed: ' + (e && e.message ? e.message : String(e));
           console.warn('Shared cloud storage write failed — saved locally only from now on.', e);
           this._cloudDisabled = true;
         }
@@ -1628,12 +1635,15 @@ function renderAll(){
 --------------------------------------------------------------------------- */
 async function initApp(){
   const statusEl = document.getElementById('syncStatus');
+  const errorEl = document.getElementById('syncError');
   const storageHintEl = document.getElementById('storageHint');
   state = await DataStore.load();
   const backend = DataStore.activeBackend; // 'supabase' | 'claude' | 'local'
   const localWorks = DataStore.localStorageWorks();
   const isShared = backend==='supabase' || backend==='claude';
   const liveWord = backend==='supabase' ? ' live' : '';
+  const supabaseConfigured = !!SUPABASE_URL && !!SUPABASE_KEY;
+  const supabaseFailed = supabaseConfigured && backend !== 'supabase';
   if(!state){
     state = defaultState();
     if(statusEl) statusEl.textContent = isShared
@@ -1648,11 +1658,25 @@ async function initApp(){
         ? '🔒 Your saved data has been loaded from this device only.'
         : '⚠️ This browser won\'t save data for local files — use Export/Import in Teacher Settings to keep your progress!';
   }
-  if(storageHintEl && !isShared && !localWorks){
-    storageHintEl.innerHTML = '⚠️ <strong>This browser is not saving data between visits for this local file.</strong> ' +
-      'This is a common browser restriction for files opened by double-clicking (the file:// address). ' +
-      'Use <strong>📊 Export Data</strong> before closing the tab, and <strong>📂 Import Data</strong> next time you reopen it, to keep your progress. ' +
-      'Running the file through a simple local server (see the setup guide) usually fixes this permanently.';
+  // Show the exact error right on the page — no dev tools / console needed,
+  // since some school computers have Developer Tools disabled entirely.
+  if(errorEl){
+    errorEl.textContent = supabaseFailed
+      ? `⚠️ Tried to connect to Supabase but couldn't: ${DataStore.lastError || 'unknown error'}`
+      : '';
+  }
+  if(storageHintEl){
+    let hint = 'Data is saved automatically. This project is structured so it can later connect to Firebase or Supabase (see script.js — DataStore).';
+    if(supabaseFailed){
+      hint = `⚠️ <strong>Supabase is configured but couldn't be reached:</strong> ${DataStore.lastError || 'unknown error'}. ` +
+        'Common causes: the table name isn\'t exactly "house_cup_data", the "data" column is missing, Row Level Security is still turned on, or the URL/key was mistyped. Your changes are still being saved locally in the meantime.';
+    } else if(!isShared && !localWorks){
+      hint = '⚠️ <strong>This browser is not saving data between visits for this local file.</strong> ' +
+        'This is a common browser restriction for files opened by double-clicking (the file:// address). ' +
+        'Use <strong>📊 Export Data</strong> before closing the tab, and <strong>📂 Import Data</strong> next time you reopen it, to keep your progress. ' +
+        'Running the file through a simple local server (see the setup guide) usually fixes this permanently.';
+    }
+    storageHintEl.innerHTML = hint;
   }
   migrateState();
   applySoundToggle();
