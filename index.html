@@ -620,28 +620,45 @@ main{max-width:1180px; margin:0 auto; padding:26px 18px 80px;}
 
 /* ---------------------------------------------------------------------------
    1. DATA STORE
-   Cross-device, no-login sharing: this app tries Anthropic's artifact
-   storage (window.storage) first, using SHARED storage — meaning anyone who
-   opens this link sees and edits the same House Cup, with no claude.ai
-   account or sign-in required on their end. That's what makes it easy to
-   open on a phone, another computer, or hand the link to a co-teacher, and
-   see the exact same students and points.
-   ⚠️ Because it's shared, anyone with the link can view and change the data
-   — there's no per-person login separating one visitor from another.
-   If window.storage isn't available (e.g. the file was downloaded and
-   opened directly, outside claude.ai), it falls back to this browser's
-   local storage only. Every read/write in the app goes through
-   DataStore.load()/DataStore.save(), so swapping in Firebase/Supabase later
-   only means editing this one object.
+   Cross-device, no-login sharing. Tries backends in this order:
+     1. Supabase (if configured below) — a real shared database, works on
+        ANY domain (GitHub Pages, Netlify, claude.ai, anywhere). This is
+        what makes "everyone who opens the link sees the same data" work
+        once this file is hosted outside claude.ai.
+     2. Anthropic's artifact storage (window.storage) — only exists inside
+        claude.ai, used as a fallback there if Supabase isn't configured.
+     3. This browser's local storage only — last resort, data stays on
+        this one device/browser.
+   ⚠️ Because the shared backends have no login, anyone with the link can
+   view and change the data.
+   Every read/write in the app goes through DataStore.load()/persist(), so
+   swapping backends only means editing this one object.
 --------------------------------------------------------------------------- */
+
+// Fill these in from your Supabase project's Settings → API page.
+// SUPABASE_KEY must be the "anon" / "publishable" key — NEVER the "secret"/
+// "service_role" key, which would give total, unrestricted database access
+// to anyone who views this page's source.
+const SUPABASE_URL = 'https://bnexbhrmmkxydiyuwrcf.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_oPtTew-y0xXy89jYL2Ts0Q_BA-HgCuw';
+const SUPABASE_TABLE = 'house_cup_data';
+const SUPABASE_ROW_ID = 1;
+
 const DataStore = {
   KEY: 'wizardHouseCupData_v1',
-  _cloudDisabled: false, // flips true after a real failure, so we stop hammering it (and the console) on every save
+  _cloudDisabled: false,    // window.storage (claude.ai) disabled after a real failure
+  _supabaseDisabled: false, // Supabase disabled after a real failure
+  hasSupabase(){
+    return !this._supabaseDisabled && !!SUPABASE_URL && !!SUPABASE_KEY;
+  },
   hasCloud(){
     return !this._cloudDisabled
       && typeof window.storage !== 'undefined' && window.storage
       && typeof window.storage.get === 'function' && typeof window.storage.set === 'function';
   },
+  /* Which backend actually ended up handling the last load/save — used for
+     the honest status message shown to the teacher. */
+  activeBackend: 'local',
   /* Some browsers (notably Chrome, in some configurations) refuse to persist
      localStorage for pages opened via file:// — writes silently vanish on
      reload even though setItem() doesn't throw. This does a real
@@ -666,19 +683,61 @@ const DataStore = {
     try{ localStorage.setItem(this.KEY, JSON.stringify(state)); return true; }
     catch(e){ console.warn('Local storage write failed', e); return false; }
   },
+  async loadFromSupabase(){
+    const url = `${SUPABASE_URL}/rest/v1/${SUPABASE_TABLE}?id=eq.${SUPABASE_ROW_ID}&select=data`;
+    const res = await fetch(url, {
+      headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` }
+    });
+    if(!res.ok) throw new Error('Supabase read failed: HTTP '+res.status);
+    const rows = await res.json();
+    if(rows && rows.length && rows[0].data != null){
+      return typeof rows[0].data === 'string' ? JSON.parse(rows[0].data) : rows[0].data;
+    }
+    return undefined; // table reachable, but no saved row yet — a genuine "nothing yet"
+  },
+  async saveToSupabase(state){
+    const url = `${SUPABASE_URL}/rest/v1/${SUPABASE_TABLE}`;
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: {
+        apikey: SUPABASE_KEY,
+        Authorization: `Bearer ${SUPABASE_KEY}`,
+        'Content-Type': 'application/json',
+        'Prefer': 'resolution=merge-duplicates'
+      },
+      body: JSON.stringify([{ id: SUPABASE_ROW_ID, data: JSON.stringify(state) }])
+    });
+    if(!res.ok) throw new Error('Supabase write failed: HTTP '+res.status);
+  },
   async load(){
+    if(this.hasSupabase()){
+      // Try twice — a brief hiccup on the very first request shouldn't take
+      // the whole shared database offline for the session.
+      for(let attempt=0; attempt<2; attempt++){
+        try{
+          const result = await this.loadFromSupabase();
+          this.activeBackend = 'supabase';
+          if(result !== undefined){ this.saveLocal(result); return result; }
+          return this.loadLocal(); // no row yet — fresh start, but Supabase is working
+        }catch(e){
+          if(attempt===0){ await new Promise(r=>setTimeout(r, 500)); continue; }
+          console.warn('Supabase storage is unavailable right now — falling back.', e);
+          this._supabaseDisabled = true;
+        }
+      }
+    }
     if(this.hasCloud()){
-      // Try twice — the very first call after the page opens can occasionally
-      // race the host connection, so one short retry clears most false alarms.
       for(let attempt=0; attempt<2; attempt++){
         try{
           const result = await window.storage.get(this.KEY, true); // true = shared with anyone who has the link, no login needed
           if(result && typeof result.value === 'string'){
             const parsed = JSON.parse(result.value);
-            this.saveLocal(parsed); // keep a fast local cache too
+            this.activeBackend = 'claude';
+            this.saveLocal(parsed);
             return parsed;
           }
-          break; // a clean "nothing saved yet" response — no need to retry
+          this.activeBackend = 'claude';
+          break;
         }catch(e){
           if(attempt===0){ await new Promise(r=>setTimeout(r, 500)); continue; }
           console.warn('Shared cloud storage is unavailable right now — using this device\'s local storage instead.', e);
@@ -686,6 +745,7 @@ const DataStore = {
         }
       }
     }
+    this.activeBackend = 'local';
     return this.loadLocal();
   },
   async save(state){
@@ -696,20 +756,33 @@ const DataStore = {
     return this.saveCloud(state);
   },
   async saveCloud(state){
-    if(!this.hasCloud()) return true; // nothing to do — already local-only
-    // Try twice — a single transient hiccup (including brief rate limiting
-    // from several quick saves in a row) shouldn't take cloud sync offline.
-    for(let attempt=0; attempt<2; attempt++){
-      try{
-        await window.storage.set(this.KEY, JSON.stringify(state), true);
-        return true;
-      }catch(e){
-        if(attempt===0){ await new Promise(r=>setTimeout(r, 600)); continue; }
-        console.warn('Shared cloud storage write failed — saved locally only from now on.', e);
-        this._cloudDisabled = true; // stop retrying every future save; avoids repeated console errors
-        return false;
+    if(this.hasSupabase()){
+      for(let attempt=0; attempt<2; attempt++){
+        try{
+          await this.saveToSupabase(state);
+          this.activeBackend = 'supabase';
+          return true;
+        }catch(e){
+          if(attempt===0){ await new Promise(r=>setTimeout(r, 600)); continue; }
+          console.warn('Supabase write failed — saved locally only from now on.', e);
+          this._supabaseDisabled = true;
+        }
       }
     }
+    if(this.hasCloud()){
+      for(let attempt=0; attempt<2; attempt++){
+        try{
+          await window.storage.set(this.KEY, JSON.stringify(state), true);
+          this.activeBackend = 'claude';
+          return true;
+        }catch(e){
+          if(attempt===0){ await new Promise(r=>setTimeout(r, 600)); continue; }
+          console.warn('Shared cloud storage write failed — saved locally only from now on.', e);
+          this._cloudDisabled = true;
+        }
+      }
+    }
+    return false;
   }
 };
 
@@ -1557,23 +1630,25 @@ async function initApp(){
   const statusEl = document.getElementById('syncStatus');
   const storageHintEl = document.getElementById('storageHint');
   state = await DataStore.load();
-  const usingCloud = DataStore.hasCloud();
+  const backend = DataStore.activeBackend; // 'supabase' | 'claude' | 'local'
   const localWorks = DataStore.localStorageWorks();
+  const isShared = backend==='supabase' || backend==='claude';
+  const liveWord = backend==='supabase' ? ' live' : '';
   if(!state){
     state = defaultState();
-    if(statusEl) statusEl.textContent = usingCloud
-      ? '✨ Starting a brand-new House Cup — anyone with this link will now see it, no sign-in needed!'
+    if(statusEl) statusEl.textContent = isShared
+      ? `✨ Starting a brand-new House Cup — anyone with this link will now see it${liveWord}, no sign-in needed!`
       : localWorks
         ? '🔒 Starting a brand-new House Cup, saved to this device only.'
         : '⚠️ This browser won\'t save data for local files — use Export/Import in Teacher Settings to keep your progress!';
   } else if(statusEl){
-    statusEl.textContent = usingCloud
-      ? '✨ Your saved House Cup data has been loaded — anyone with this link shares it, no sign-in needed!'
+    statusEl.textContent = isShared
+      ? `✨ Your saved House Cup data has been loaded — anyone with this link shares it${liveWord}, no sign-in needed!`
       : localWorks
         ? '🔒 Your saved data has been loaded from this device only.'
         : '⚠️ This browser won\'t save data for local files — use Export/Import in Teacher Settings to keep your progress!';
   }
-  if(storageHintEl && !usingCloud && !localWorks){
+  if(storageHintEl && !isShared && !localWorks){
     storageHintEl.innerHTML = '⚠️ <strong>This browser is not saving data between visits for this local file.</strong> ' +
       'This is a common browser restriction for files opened by double-clicking (the file:// address). ' +
       'Use <strong>📊 Export Data</strong> before closing the tab, and <strong>📂 Import Data</strong> next time you reopen it, to keep your progress. ' +
